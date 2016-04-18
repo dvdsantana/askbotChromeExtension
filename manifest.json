@@ -12,5 +12,6 @@
     "background": {
         "scripts": ["scripts/popup.js"],
         "persistent": false
-    }
+    },
+    "permissions": ["http://localhost:3000/*"]
 }
