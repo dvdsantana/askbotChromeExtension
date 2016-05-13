@@ -97,7 +97,7 @@ KMapp.buildQuestion = function(item, index) {
                 </div>
             </div>
             <div class="summary accordion">
-                <h3><a href="" class="question-hyperlink" title="@title">@title</a></h3>
+                <h3><a href="@url" class="question-hyperlink" title="@title">@title</a></h3>
                 <div class="tags">
                     @tags
                 </div>
