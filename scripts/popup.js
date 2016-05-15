@@ -1,25 +1,33 @@
 var KMapp = {};
 
-// endpoint qie devuelve las preguntas de tipo /api/v1/questions/
-KMapp.questionsEndPoint = 'http://localhost:3000/questions.json';
+// endpoint que devuelve las preguntas de tipo /api/v1/questions/
+KMapp.questionsEndPoint = document.getElementById('qForm').action;
 
-KMapp.init = function() {
-    // contenedor de preguntas
-    var questionsList = document.querySelector('#mainbar');
-    
+KMapp.init = function() {   
     // enlace para refrescar los resultados, volver a obtener las preguntas
     var refresh = document.querySelector('a.refresh');
-    
-    var bustCache = '?' + new Date().getTime() + '&callback=?';
-    var oReq = new XMLHttpRequest();
     
     // rotamos la imagen mientras se obtienen los datos
     refresh.classList.toggle('rotate');
     
-    oReq.open('GET', KMapp.questionsEndPoint + bustCache, true);
-    oReq.responseType = 'json';
-    oReq.send();
-    oReq.onload = function(e) {
+    KMapp.getResults(KMapp.questionsEndPoint);
+    
+    // para la rotación de la imagen
+    refresh.classList.toggle('rotate');
+}
+
+KMapp.getResults = function(endpoint, data) {
+    // contenedor de preguntas
+    var questionsList = document.querySelector('#mainbar');
+    
+    endpoint += '?' + Math.random();
+    var httpRequest = new XMLHttpRequest();
+       
+    httpRequest.open('GET', endpoint, true);
+    httpRequest.responseType = 'json';
+    httpRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    httpRequest.send(data != null ? KMapp.getDataRequest(data) : null);
+    httpRequest.onload = function(e) {
         var xhr = e.target;
         
         // comprueba que recibimos los datos con el tipo esperado.
@@ -43,28 +51,32 @@ KMapp.init = function() {
             questionsList.innerHTML = JSON.parse(xhr.responseText).message;
         }
     };
-    
-    // para la rotación de la imagen
-    refresh.classList.toggle('rotate');
 }
 
-
-// Añade o quita las clases "active" y "show" para dar efecto acordeón.
-// Active se usa para diferenciar la pregunta seleccionada
-// Show se usa para abrir el texto de la pregunta
-
-KMapp.attachAccordionEvent = function() {
-    var acc = document.querySelectorAll('.accordion');
-    var i;
-
-    for (i = 0; i < acc.length; i++) {
-        acc[i].onclick = function() {
-            this.classList.toggle('active');
-            this.querySelector('div.panel').classList.toggle('show');
+KMapp.getDataRequest = function (data) {
+    data.segments = [];
+    
+    for (var nItem = 0; nItem < data.elements.length; nItem++) {
+        oField = data.elements[nItem];
+        
+        if (!oField.hasAttribute("name")) { continue; }
+        
+        sFieldType = oField.nodeName.toUpperCase() === "INPUT" ? oField.getAttribute("type").toUpperCase() : "TEXT";
+        
+        if ((sFieldType !== "RADIO" && sFieldType !== "CHECKBOX") || oField.checked) {
+            data.segments.push(
+                /* enctype is application/x-www-form-urlencoded or text/plain or method is GET */
+                plainEscape(oField.name) + "=" + plainEscape(oField.value));
         }
     }
+    return data.segments;
 }
 
+function plainEscape (sText) {
+    /* how should I treat a text/plain form encoding? what characters are not allowed? this is what I suppose...: */
+    /* "4\3\7 - Einstein said E=mc2" ----> "4\\3\\7\ -\ Einstein\ said\ E\=mc2" */
+    return sText.replace(/[\s\=\\]/g, "\\$&");
+}
 
 // item.author.username
 // item.accepted_answer_id
@@ -117,7 +129,7 @@ KMapp.buildQuestion = function(item, index) {
         .split('@title').join(item.title)
         .replace('@author', item.author.username)
         .replace('@added_at', qDate.toLocaleString())
-        .replace('@relativetime', timeDifference(current, qDate))
+        .replace('@relativetime', KMapp.timeDifference(current, qDate))
         .replace('@score', item.score)
         .replace('@tags', tags)
         .replace('@summary', item.summary)
@@ -131,7 +143,7 @@ KMapp.buildTag = function(item, index) {
     .split('@tag').join(item);
 }
 
-function timeDifference(current, previous) {
+KMapp.timeDifference = function (current, previous) {
     var msPerMinute = 60 * 1000;
     var msPerHour = msPerMinute * 60;
     var msPerDay = msPerHour * 24;
@@ -140,32 +152,32 @@ function timeDifference(current, previous) {
     
     var elapsed = current - previous;
     
-    if (elapsed < msPerMinute) {
-         return 'hace ' + Math.round(elapsed/1000) + ' segundos';   
-    }
-    
-    else if (elapsed < msPerHour) {
-         return 'hace ' + Math.round(elapsed/msPerMinute) + ' minutos';   
-    }
-    
-    else if (elapsed < msPerDay ) {
-         return 'hace ' + Math.round(elapsed/msPerHour ) + ' horas';   
-    }
+    if (elapsed < msPerMinute) return 'hace ' + Math.round(elapsed/1000) + ' segundos';   
+    else if (elapsed < msPerHour) return 'hace ' + Math.round(elapsed/msPerMinute) + ' minutos';   
+    else if (elapsed < msPerDay ) return 'hace ' + Math.round(elapsed/msPerHour ) + ' horas';   
+    else if (elapsed < msPerMonth) return 'hace ' + Math.round(elapsed/msPerDay) + ' días';   
+    else if (elapsed < msPerYear) return 'hace ' + Math.round(elapsed/msPerMonth) + ' meses';   
+    else return 'hace ' + Math.round(elapsed/msPerYear ) + ' años';
+}
 
-    else if (elapsed < msPerMonth) {
-         return 'hace ' + Math.round(elapsed/msPerDay) + ' días';   
-    }
-    
-    else if (elapsed < msPerYear) {
-         return 'hace ' + Math.round(elapsed/msPerMonth) + ' meses';   
-    }
-    
-    else {
-         return 'hace ' + Math.round(elapsed/msPerYear ) + ' años';   
+// Añade o quita las clases "active" y "show" para dar efecto acordeón.
+// Active se usa para diferenciar la pregunta seleccionada
+// Show se usa para abrir el texto de la pregunta
+
+KMapp.attachAccordionEvent = function() {
+    var acc = document.querySelectorAll('.accordion');
+    var i;
+
+    for (i = 0; i < acc.length; i++) {
+        acc[i].onclick = function() {
+            this.classList.toggle('active');
+            this.querySelector('div.panel').classList.toggle('show');
+        }
     }
 }
 
 // lanza la aplicación
-KMapp.init();
+document.onload = KMapp.init();
 
 document.querySelector('a.refresh').onclick = KMapp.init;
+ 
