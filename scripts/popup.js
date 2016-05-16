@@ -25,8 +25,8 @@ KMapp.getResults = function(endpoint, data) {
        
     httpRequest.open('GET', endpoint, true);
     httpRequest.responseType = 'json';
-    httpRequest.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-    httpRequest.send(data != null ? KMapp.getDataRequest(data) : null);
+    httpRequest.setRequestHeader('Content-Type', 'multipart/form-data');
+    httpRequest.send(data != null ? KMapp.getDataRequest() : null);
     httpRequest.onload = function(e) {
         var xhr = e.target;
         
@@ -53,29 +53,29 @@ KMapp.getResults = function(endpoint, data) {
     };
 }
 
-KMapp.getDataRequest = function (data) {
-    data.segments = [];
-    
-    for (var nItem = 0; nItem < data.elements.length; nItem++) {
-        oField = data.elements[nItem];
-        
-        if (!oField.hasAttribute("name")) { continue; }
-        
-        sFieldType = oField.nodeName.toUpperCase() === "INPUT" ? oField.getAttribute("type").toUpperCase() : "TEXT";
-        
-        if ((sFieldType !== "RADIO" && sFieldType !== "CHECKBOX") || oField.checked) {
-            data.segments.push(
-                /* enctype is application/x-www-form-urlencoded or text/plain or method is GET */
-                plainEscape(oField.name) + "=" + plainEscape(oField.value));
-        }
-    }
-    return data.segments;
-}
+/***********************************
+/api/v1/questions/
 
-function plainEscape (sText) {
-    /* how should I treat a text/plain form encoding? what characters are not allowed? this is what I suppose...: */
-    /* "4\3\7 - Einstein said E=mc2" ----> "4\\3\\7\ -\ Einstein\ said\ E\=mc2" */
-    return sText.replace(/[\s\=\\]/g, "\\$&");
+Returns information about all questions.
+
+Optional parameters:
+
+* author (<int> user id)
+* scope (all|unanswered), default "all"
+* sort (age|activity|answers|votes|relevance)-(asc|desc) default - activity-desc
+* tags - comma-separated list of tags, without spaces
+* query - text search query, url escaped
+****************************************/
+
+KMapp.getDataRequest = function () {
+    var formData = new FormData();
+    var text = encodeURIComponent(document.getElementById('q').value);
+    var scope = document.getElementById('s').checked == true ? 'all' : 'unanswered';
+    
+    formData.append('query', text);
+    formData.append('scope', scope);
+    
+    return formData;
 }
 
 // item.author.username
@@ -180,4 +180,6 @@ KMapp.attachAccordionEvent = function() {
 document.onload = KMapp.init();
 
 document.querySelector('a.refresh').onclick = KMapp.init;
+
+document.getElementById('s').onchange = KMapp.getDataRequest;
  
