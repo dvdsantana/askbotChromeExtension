@@ -11,11 +11,12 @@
         <h1>Soy KM, pregúntame cualquier cosa</h1>
         <a href="#" class="refresh" title="Actualizar">&#128472;</a>
     </header>
-    <form id="qForm" method="post" action="http://localhost:3000/questions.json" onsubmit="KMapp.getResults('http://localhost:3000/questions.json', this); return false;">
+    <form id="qForm" method="post" action="http://localhost:8080/JsonFile/fichero.json" onsubmit="KMapp.getResults('http://localhost:3000/questions.json', this); return false;">
         <input name="query" id="q" placeholder="Search Q&amp;A" value="" tabindex="1" autocomplete="off" maxlength="240" type="search" class="search">
         <input name="scope" id="s" tabindex="2" type="checkbox" checked>
         <label for="s">Solo respondidas</label>
     </form>
+    <div id="tagsbar"></div>
     <div id="mainbar"></div>
     <footer></footer>
     <script src="scripts/popup.js" async></script>

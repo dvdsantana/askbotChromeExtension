@@ -13,5 +13,5 @@
         "scripts": ["scripts/popup.js"],
         "persistent": false
     },
-    "permissions": ["http://localhost:3000/*"]
+    "permissions": ["http://localhost:8080/*"]
 }

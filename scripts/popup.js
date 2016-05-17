@@ -3,7 +3,16 @@ var KMapp = {};
 // endpoint que devuelve las preguntas de tipo /api/v1/questions/
 KMapp.questionsEndPoint = document.getElementById('qForm').action;
 
-KMapp.init = function() {   
+// Mapa interno con el conjunto total de tags de la busqueda
+KMapp.tags = new Array();
+
+// tag seleccionado
+KMapp.innerTag = "";
+
+KMapp.init = function(tagSelected) {   
+	// seteamos valores de la busqueda
+	KMapp.resetTags(tagSelected);
+	
     // enlace para refrescar los resultados, volver a obtener las preguntas
     var refresh = document.querySelector('a.refresh');
     
@@ -14,6 +23,17 @@ KMapp.init = function() {
     
     // para la rotación de la imagen
     refresh.classList.toggle('rotate');
+}
+
+KMapp.resetTags = function(tagSelected){
+	KMapp.tags = new Array();
+	if(tagSelected != null && (typeof tagSelected === 'string')){
+		console.log("Han seleccionado el tag: "+tagSelected);
+		KMapp.innerTag = tagSelected;
+	}else{
+		console.log("tag vacio");
+		KMapp.innerTag = "";
+	}
 }
 
 KMapp.getResults = function(endpoint, data) {
@@ -44,6 +64,12 @@ KMapp.getResults = function(endpoint, data) {
                 
                 // establece el evento click de cada pregunta. Efecto acordeón
                 KMapp.attachAccordionEvent();
+                
+                // vamos a imprimir los tags mas famosos
+                document.querySelector('#tagsbar').innerHTML = KMapp.createPopularTags();
+                
+                // anyade la funcion de busqueda por tag
+                KMapp.findTag();
             }
         } else {
             // algo fue mal, fin de la ejecución.
@@ -53,19 +79,18 @@ KMapp.getResults = function(endpoint, data) {
     };
 }
 
-/***********************************
-/api/v1/questions/
-
-Returns information about all questions.
-
-Optional parameters:
-
-* author (<int> user id)
-* scope (all|unanswered), default "all"
-* sort (age|activity|answers|votes|relevance)-(asc|desc) default - activity-desc
-* tags - comma-separated list of tags, without spaces
-* query - text search query, url escaped
-****************************************/
+/*******************************************************************************
+ * /api/v1/questions/
+ * 
+ * Returns information about all questions.
+ * 
+ * Optional parameters:
+ * 
+ * author (<int> user id) scope (all|unanswered), default "all" sort
+ * (age|activity|answers|votes|relevance)-(asc|desc) default - activity-desc
+ * tags - comma-separated list of tags, without spaces query - text search
+ * query, url escaped
+ ******************************************************************************/
 
 KMapp.getDataRequest = function () {
     var formData = new FormData();
@@ -92,6 +117,8 @@ KMapp.buildQuestion = function(item, index) {
     var qDate = new Date(item.added_at*1000);
     var tags = item.tags.map(KMapp.buildTag).join('');
     
+    item.tags.map(KMapp.sumTaggs);
+    if(KMapp.innerTag == undefined || tags.indexOf(KMapp.innerTag) > -1){
     return `
         <div class="question-summary narrow">
             <div class="cp">
@@ -134,6 +161,9 @@ KMapp.buildQuestion = function(item, index) {
         .replace('@tags', tags)
         .replace('@summary', item.summary)
         .split('@url').join(item.url);
+    }else{
+    	return '';
+    }
 }
 
 KMapp.buildTag = function(item, index) {
@@ -176,10 +206,53 @@ KMapp.attachAccordionEvent = function() {
     }
 }
 
-// lanza la aplicación
-document.onload = KMapp.init();
+// Funcion que nos permite alimentar el mapa interno con las tags de la busqueda
+KMapp.sumTaggs = function(item, index) {
+	var encontrado = false;
+	for (var i=0; i < KMapp.tags.length && !encontrado; i++) {
+        if (KMapp.tags[i].tagName === item) {
+        	KMapp.tags[i].tagCount = KMapp.tags[i].tagCount+1;
+        	encontrado = true;
+        }
+    }
+	if(!encontrado){
+		KMapp.tags.push({tagName: item, tagCount: 1});
+	}
+	
+}
 
-document.querySelector('a.refresh').onclick = KMapp.init();
+//Funcion que nos genera el codigo HTML con los tags mas populares
+KMapp.createPopularTags = function(){
+	KMapp.tags.sort(function(a, b) {
+	    return b.tagCount - a.tagCount;
+	});
+	
+	var cadena = "<div class='tags'>Popular Tags: ";
+	for(var i=0; i < KMapp.tags.length && i < 5; i++){
+		cadena += "<a href=\"#\" class=\"post-tag t-fenix findTag\" title=\""+KMapp.tags[i].tagName+"\" ";
+		cadena += "rel=\"tag\">"+KMapp.tags[i].tagName + " ("+KMapp.tags[i].tagCount+")"+"</a>";
+	}
+	cadena+="</div>";
+	return cadena;
+}
+
+//Iteramos por los elementos de la busqueda y almacenamos los tags de la misma
+KMapp.findTag = function(){
+	var aFindTag = document.querySelectorAll('a.findTag');
+    var i;
+    console.log('vamos a iterar');
+    for (i = 0; i < aFindTag.length; i++) {
+    	aFindTag[i].onclick=function(){
+    		console.log("this.title: "+this.title);
+    		KMapp.init(this.title);
+    	}
+    }
+}
+
+// lanza la aplicación
+document.onload = KMapp.init;
+
+document.querySelector('a.refresh').onclick = KMapp.init;
 
 document.getElementById('s').onchange = KMapp.getResults(KMapp.questionsEndPoint);
  
