@@ -100,7 +100,7 @@ KMapp.buildQuestion = function(item, index) {
                     <div>votos</div>
                 </div>
                 <div class="status@unanswered">
-                    <div class="mini-counts"><span title="@answer_count answers">@answer_count</span></div>
+                    <div class="mini-counts"><span title="@answer_count respuestas">@answer_count</span></div>
                     <div>respuestas</div>
                 </div>
                 <div class="views">
@@ -115,7 +115,7 @@ KMapp.buildQuestion = function(item, index) {
                 </div>
                 <div class="started">
                     <a href="" class="started-link">preguntado <span title="@added_at" class="relativetime">@relativetime por </span></a>
-                    <a href="">@author</a><span class="reputation-score" title="reputation score " dir="ltr"> @score</span>
+                    <a href="">@author</a><span class="reputation-score" title="karma " dir="ltr"> @score</span>
                 </div>
                 <div class="panel">
                     @summary
@@ -133,12 +133,12 @@ KMapp.buildQuestion = function(item, index) {
         .replace('@score', item.score)
         .replace('@tags', tags)
         .replace('@summary', item.summary)
-        .replace('@url', item.url);
+        .split('@url').join(item.url);
 }
 
 KMapp.buildTag = function(item, index) {
     return `
-        <a href="" class="post-tag t-@tag" title="show questions tagged '@tag'" rel="tag">@tag</a>
+        <a href="" class="post-tag t-@tag" title="ver preguntas con el tag '@tag'" rel="tag">@tag</a>
     `
     .split('@tag').join(item);
 }
@@ -179,7 +179,7 @@ KMapp.attachAccordionEvent = function() {
 // lanza la aplicación
 document.onload = KMapp.init();
 
-document.querySelector('a.refresh').onclick = KMapp.init;
+document.querySelector('a.refresh').onclick = KMapp.init();
 
-document.getElementById('s').onchange = KMapp.getDataRequest;
+document.getElementById('s').onchange = KMapp.getResults(KMapp.questionsEndPoint);
  
