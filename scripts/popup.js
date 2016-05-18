@@ -28,10 +28,8 @@ KMapp.init = function(tagSelected) {
 KMapp.resetTags = function(tagSelected){
 	KMapp.tags = new Array();
 	if(tagSelected != null && (typeof tagSelected === 'string')){
-		console.log("Han seleccionado el tag: "+tagSelected);
 		KMapp.innerTag = tagSelected;
 	}else{
-		console.log("tag vacio");
 		KMapp.innerTag = "";
 	}
 }
@@ -40,13 +38,13 @@ KMapp.getResults = function(endpoint, data) {
     // contenedor de preguntas
     var questionsList = document.querySelector('#mainbar');
     
-    endpoint += '?' + Math.random();
+    endpoint += '?' + KMapp.getDataRequest() + '&' + Math.random();
     var httpRequest = new XMLHttpRequest();
        
     httpRequest.open('GET', endpoint, true);
     httpRequest.responseType = 'json';
     httpRequest.setRequestHeader('Content-Type', 'multipart/form-data');
-    httpRequest.send(data != null ? KMapp.getDataRequest() : null);
+    httpRequest.send();
     httpRequest.onload = function(e) {
         var xhr = e.target;
         
@@ -60,7 +58,7 @@ KMapp.getResults = function(endpoint, data) {
                 questionsList.innerHTML = '';
                 
                 // convierte el array de preguntas en un conjunto de li
-                questionsList.innerHTML += xhr.response.questions.map(KMapp.buildQuestion).join('');
+                questionsList.innerHTML = xhr.response.questions.map(KMapp.buildQuestion).join('');
                 
                 // establece el evento click de cada pregunta. Efecto acordeón
                 KMapp.attachAccordionEvent();
@@ -70,6 +68,8 @@ KMapp.getResults = function(endpoint, data) {
                 
                 // anyade la funcion de busqueda por tag
                 KMapp.findTag();
+                
+                document.querySelector('#nResults').innerHTML = xhr.response.count;
             }
         } else {
             // algo fue mal, fin de la ejecución.
@@ -86,21 +86,20 @@ KMapp.getResults = function(endpoint, data) {
  * 
  * Optional parameters:
  * 
- * author (<int> user id) scope (all|unanswered), default "all" sort
- * (age|activity|answers|votes|relevance)-(asc|desc) default - activity-desc
- * tags - comma-separated list of tags, without spaces query - text search
- * query, url escaped
+ * author (<int> user id)
+ * scope (all|unanswered), default "all"
+ * sort (age|activity|answers|votes|relevance)-(asc|desc) default - activity-desc
+ * tags - comma-separated list of tags, without spaces
+ * query - text search query, url escaped
  ******************************************************************************/
 
 KMapp.getDataRequest = function () {
-    var formData = new FormData();
     var text = encodeURIComponent(document.getElementById('q').value);
     var scope = document.getElementById('s').checked == true ? 'all' : 'unanswered';
     
-    formData.append('query', text);
-    formData.append('scope', scope);
+    var query = 'scope=' + scope + (text.length > 4 ? '&query=' + text : '');
     
-    return formData;
+    return query;
 }
 
 // item.author.username
@@ -240,19 +239,17 @@ KMapp.createPopularTags = function(){
 KMapp.findTag = function(){
 	var aFindTag = document.querySelectorAll('a.findTag');
     var i;
-    console.log('vamos a iterar');
     for (i = 0; i < aFindTag.length; i++) {
     	aFindTag[i].onclick=function(){
-    		console.log("this.title: "+this.title);
     		KMapp.init(this.title);
     	}
     }
 }
 
 // lanza la aplicación
-document.onload = KMapp.init;
+document.onload = KMapp.init();
 
-document.querySelector('a.refresh').onclick = KMapp.init;
+document.querySelector('a.refresh').addEventListener('click', KMapp.init);
 
-document.getElementById('s').onchange = KMapp.getResults(KMapp.questionsEndPoint);
+document.getElementById('s').addEventListener('change', function() {KMapp.getResults('https://ask.libreoffice.org/es/api/v1/questions/', true)});
  
