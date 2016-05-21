@@ -1,8 +1,5 @@
 var KMapp = {};
 
-// endpoint que devuelve las preguntas de tipo /api/v1/questions/
-KMapp.questionsEndPoint = document.getElementById('qForm').action;
-
 // Mapa interno con el conjunto total de tags de la busqueda
 KMapp.tags = new Array();
 
@@ -10,19 +7,24 @@ KMapp.tags = new Array();
 KMapp.innerTag = "";
 
 KMapp.init = function (tagSelected) {
-    // seteamos valores de la busqueda
-    KMapp.resetTags(tagSelected);
+    
+    if (KMapp.getBaseEndpoint() != undefined) {
+        // seteamos valores de la busqueda
+        KMapp.resetTags(tagSelected);
 
-    // enlace para refrescar los resultados, volver a obtener las preguntas
-    var refresh = document.querySelector('a.refresh');
+        // enlace para refrescar los resultados, volver a obtener las preguntas
+        var refresh = document.querySelector('a.refresh');
 
-    // rotamos la imagen mientras se obtienen los datos
-    refresh.classList.toggle('rotate');
+        // rotamos la imagen mientras se obtienen los datos
+        refresh.classList.toggle('rotate');
 
-    KMapp.getResults(KMapp.questionsEndPoint);
+        KMapp.getResults();
 
-    // para la rotación de la imagen
-    refresh.classList.toggle('rotate');
+        // para la rotación de la imagen
+        refresh.classList.toggle('rotate');
+    } else {
+        window.document = "options.html";
+    }
 }
 
 KMapp.resetTags = function (tagSelected) {
@@ -34,11 +36,11 @@ KMapp.resetTags = function (tagSelected) {
     }
 }
 
-KMapp.getResults = function (endpoint, data) {
+KMapp.getResults = function (data) {
     // contenedor de preguntas
     var questionsList = document.querySelector('#mainbar');
 
-    endpoint += '?' + KMapp.getDataRequest() + '&' + Math.random();
+    var endpoint = KMapp.getBaseEndpoint() + '?' + KMapp.getDataRequest() + '&' + Math.random();
     var httpRequest = new XMLHttpRequest();
 
     //Seccion de la indicacion de "cargando"
@@ -94,6 +96,19 @@ KMapp.getResults = function (endpoint, data) {
     };
 }
 
+KMapp.getBaseEndpoint = function() {
+    var url = localStorage['KM.siteURL']
+    
+    if (url != undefined && url.length > 6) { // "http://".length = 7
+        url.split('/api/v1/questions').join('');
+        url += '/api/v1/questions';
+    } else {
+        url = undefined;
+    }
+    
+    return  url;
+}
+
 /*******************************************************************************
  * /api/v1/questions/
  * 
@@ -110,7 +125,7 @@ KMapp.getResults = function (endpoint, data) {
 
 KMapp.getDataRequest = function () {
     var text = encodeURIComponent(document.getElementById('q').value);
-    var scope = document.getElementById('s').checked == true ? 'all' : 'unanswered';
+    var scope = document.querySelector('input[name="scope"]:checked').value;
 
     var query = 'scope=' + scope + (text.length > 4 ? '&query=' + text : '');
 
@@ -262,16 +277,9 @@ KMapp.findTag = function () {
 }
 
 // lanza la aplicación
-document.onload = KMapp.init();
+document.onload = KMapp.init();   
 
-document.querySelector('a.refresh').addEventListener('click', KMapp.init);
+document.querySelector('a.refresh').onclick = KMapp.init;
 
-document.getElementById('s').addEventListener('change', function () {
-    var checked = this.checked;
-
-    var url = "https://ask.libreoffice.org/es/api/v1/questions/";
-    if (!checked) {
-        url += "?scope=unanswered";
-    }
-    KMapp.getResults(url, true)
-});
+document.getElementById('scope-all').onclick = KMapp.getResults;
+document.getElementById('scope-unanswered').onclick = KMapp.getResults;

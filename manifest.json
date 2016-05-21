@@ -13,5 +13,6 @@
         "scripts": ["scripts/popup.js"],
         "persistent": false
     },
-    "permissions": ["https://ask.libreoffice.org/*"]
+    "permissions": ["http://*/", "https://*/", "storage"],
+    "options_page": "options.html"
 }
